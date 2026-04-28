@@ -6,7 +6,7 @@
 
 | Skill | 触发方式 | 说明 |
 |-------|---------|------|
-| [clarify](https://github.com/dulk-dev/my-skills/blob/main/clarify/SKILL.md) | `clarify` / `clarify scope` / `interview requirements` | 采访式需求澄清。扫描项目上下文后，以多轮结构化问答澄清需求，直到信息充分可执行。 |
+| [clarify](https://github.com/dulk-dev/my-skills/blob/master/clarify/SKILL.md) | `clarify` / `clarify scope` / `interview requirements` | 采访式需求澄清。扫描项目上下文后，以多轮结构化问答澄清需求，直到信息充分可执行。 |
 
 ## 安装
 
