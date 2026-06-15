@@ -1,153 +1,30 @@
 ---
 name: clarify
-description: Interview-style requirement clarification with project context. Scan project code to collect context, then ask structured multi-round questions to clarify and refine requirements until actionable. Use when the user proposes a new feature, improvement, refactoring, bug fix, or any task that needs deeper discussion before implementation. Triggers on requirement discussion, need clarification, explore requirements, clarify scope, interview requirements, understand the task.
+description: Use when the user proposes a feature, improvement, refactoring, or bug fix that needs deeper discussion before implementation — or when requirements are vague, scope is unclear, or multiple directions exist. Scans project code, identifies affected layers, and resolves decision branches one at a time.
+metadata:
+  author: chaochun
+  version: "2.0"
+  remark: Rewritten from v1. Inspired by grill-me-clarify's concise English style, one-at-a-time questioning, and diagram usage. Adds layer coverage awareness and code-first resolution.
 ---
 
-# Clarify - 采访式需求澄清
+## Clarify
 
-扫描项目代码收集上下文，以多轮结构化问答澄清需求，直到信息充分可执行。
+Turn vague requirements into actionable scope through code-aware interview.
 
-## 核心工作流
+**Scan** the project to understand structure, tech stack, and relevant modules. Common layers: UI/Interaction, API/Contract, Business Logic, Data/Storage — add others (Auth, Async, External Services, Infra) as needed.
 
-```
-首轮: 项目识别 → 代码扫描 → 结构化提问 → 更新状态文档
-后续: 代码扫描 → 结构化提问 → 更新状态文档 → 循环
-退出: 用户决定结束 → 最终摘要 → 建议后续动作
-```
+**Clarify** each branch that needs resolving, one question at a time — each answer may reveal new branches to explore — until all directions are clear. If the codebase already answers a question, state it and move on.
 
-### 1. 项目识别（仅首轮）
+**Converge** — summarize decisions, output a final diagram, suggest next actions.
 
-扫描依赖文件确定技术栈和项目结构：
+Exit is user-driven. Never auto-exit.
 
-- 依赖文件：`package.json`、`pom.xml`、`build.gradle`、`go.mod`、`Cargo.toml`、`pyproject.toml`、`requirements.txt`、`Gemfile`、`*.csproj` 等
-- 目录结构：识别分层方式（MVC、DDD、模块化、monorepo 等）
-- 产出：语言、框架、分层模式、关键目录的简要画像
+## Rules
 
-### 2. 需求相关代码扫描
-
-提取用户描述和已有问答中的关键词（中文 + 英文 + 领域术语），按职责层搜索：
-
-
-| 职责层    | 搜索目标                   |
-| ------ | ---------------------- |
-| 入口/路由  | API 端点、路由定义、页面入口、命令处理  |
-| 业务逻辑   | 核心处理流程、业务规则、工具函数       |
-| 数据模型   | 实体定义、Schema、类型声明、数据库模型 |
-| 配置     | 环境配置、权限规则、特性开关         |
-| 已有相似模式 | 项目中类似功能的实现（用于参考和复用）    |
-
-
-**渐进式**：首轮广扫定位相关模块，后续根据用户回答精准深入。
-
-### 3. 结构化提问
-
-使用 `AskQuestion` / `AskUserQuestion` 或类似的可用问答工具。
-
-**必须遵守的规则**：
-
-1. 每轮 **2-4 个业务问题**（不含深度控制问题）
-2. 末尾 **必须追加一个独立的深度控制问题**，选项至少包含：
-  - "继续深入当前话题"
-  - "你觉得还有什么需要澄清的？"（让 Agent 基于已收集信息主动判断遗漏点）
-  - "信息足够了，可以结束"
-  - 一个 fallback 选项（如"我有其他想法"），让用户通过输入框补充额外需求或变更
-3. 用户选择"你觉得还有什么需要澄清的？"时，基于当前状态文档中的需求摘要和项目发现，主动分析遗漏点并提出下一轮问题
-
-### 4. 更新状态文档
-
-**每轮问答完成后立即更新**状态文档 `tmp/ask_question/{yymmdd}_{topic}.md`（项目根目录下）。这是每轮循环的最后一个动作——在收到用户回答、处理完毕后，必须先更新文档再进入下一轮扫描和提问。不要积攒多轮后批量更新。
-
-格式如下：
-
-```markdown
-# {topic} - 需求澄清记录
-
-## 需求摘要
-
-（2-3 句话概括当前理解，每轮刷新）
-
-## 项目发现
-
-- {文件路径} - {一句话说明}（只记结论不贴代码，上限 20 条，超出时合并或移除已不相关的）
-
-## Q&A 记录
-
-### 第 1 轮
-
-**Q1**: {问题}
-**A1**: {回答}
-
-### 第 2 轮
-...
-
-## 备忘（可选）
-
-- （用户回答中提到但当轮未展开的点，有则记录，无则省略此节）
-```
-
-每轮必须立即更新：追加本轮 Q&A，刷新需求摘要，追加项目发现（注意上限），按需更新备忘。
-
-## 提问维度与选择策略
-
-
-| 维度        | 典型问题              | 适用时机         |
-| --------- | ----------------- | ------------ |
-| **功能边界**  | 解决什么问题？什么场景？核心诉求？ | 首轮必问         |
-| **业务概念**  | 关键术语含义？业务规则？缩略语？  | 遇到不熟悉的领域概念   |
-| **前置依赖**  | 依赖什么前置条件？数据？功能？   | 涉及新功能引入      |
-| **项目上下文** | 和已有实现的关系？复用还是新建？  | 扫描发现相似模式     |
-| **数据流向**  | 数据从哪来？到哪去？如何关联？   | 涉及数据处理       |
-| **异常场景**  | 失败处理？重复数据？边界情况？   | 涉及写入/导入/外部交互 |
-| **非功能需求** | 性能？并发？数据量？权限？     | 涉及生产环境       |
-
-
-**选择策略**：
-
-- 首轮优先功能边界 + 业务概念
-- 后续根据扫描发现关联维度（发现数据模型 → 问数据流向）
-- 不重复已确认信息
-
-## 退出与衔接
-
-- **除非用户在深度控制问题中明确选择"信息足够了，可以结束"，否则不退出问答模式**。Agent 可以建议结束并说明理由，但不能自行决定停止提问。每轮都必须继续调用问答工具
-- 结束时确保状态文档的「需求摘要」为最终版本
-- 结束后根据需求性质建议后续动作（任务拆解、方案设计、直接实现等）
-
-## 示例
-
-### 示例 A：数据导入功能
-
-用户："我想做一个成绩批量导入功能"
-
-Agent：[扫描项目] → 识别 Python + FastAPI，发现已有成绩查询接口、CSV 解析工具、Score 模型
-
-Agent：[AskQuestion]
-
-1. 使用场景？（赛后批量录入 / 历史迁移 / 对接外部系统 / 以上都不是）
-2. 导入数据格式？（Excel / CSV / JSON / 以上都不是）
-3. 已有 CSV 解析工具，可否复用？（可以复用 / 需求不同需新建 / 不确定 / 以上都不是）
-4. [深度控制]（继续深入 / 你觉得还有什么需要澄清的？ / 信息足够了 / 我有其他想法）
-
-### 示例 B：前端重构
-
-用户："设置页面太混乱了，想重构"
-
-Agent：[扫描项目] → 识别 React + TS，发现 Settings.tsx 单文件 800 行，有 Tab 组件可复用
-
-Agent：[AskQuestion]
-
-1. "混乱"具体指？（代码难维护 / 用户体验差 / 两者都有 / 以上都不是）
-2. 重构范围？（仅拆分组件 / 同时优化交互 / 以上都不是）
-3. [深度控制]（继续深入 / 你觉得还有什么需要澄清的？ / 信息足够了 / 我有其他想法）
-
-### 示例 C：Bug 修复
-
-用户："订单支付后状态没有更新"
-
-Agent：[扫描项目] → 发现支付回调处理、Order 状态枚举、UpdateStatus 方法
-
-Agent：[AskQuestion]
-
-1. 复现条件？（所有支付都有问题 / 特定支付方式 / 偶发 / 以上都不是）
-2. "未更新"指？（数据库未更新 / 页面未刷新 / 不确定 / 以上都不是）
-3. [深度控制]（继续深入 / 你觉得还有什么需要澄清的？ / 信息足够了 / 我有其他想法）
+- Ask one question at a time for decisions with dependencies. Batch independent confirmations when natural. For each question, provide your recommended answer.
+- Before asking the user, check if the codebase already provides the answer. Only ask when it doesn't.
+- Don't get tunnel-visioned on one layer. If other directions remain unexplored, nudge the conversation toward them.
+- Challenge the user when their words conflict with what the code shows or when something doesn't add up.
+- When the user uses vague or overloaded terms, propose a precise canonical term.
+- When a concept is better explained visually, use diagrams (ASCII or Mermaid).
+- End each question with the structured question tool.
